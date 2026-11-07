@@ -5,8 +5,9 @@ import {
   HelpCircle,
   Eye,
   CheckCircle2,
-  Trophy,
+  XCircle,
   ImageIcon,
+  Lock,
 } from 'lucide-react';
 import { Question, Subject, Voucher } from '../types';
 import { checkAnswerMatch, getDeviceLabel } from '../lib/quizHelper';
@@ -20,7 +21,6 @@ interface QuizQuestionViewProps {
   subject: Subject;
   deviceId: string;
   isAnswered: boolean;
-  hasWonOverall: boolean;
   savedAnswerData?: { answeredAt: string; answer: string; isCorrect: boolean };
   onBack: () => void;
   onAnswerRecorded: (questionId: string, answer: string, isCorrect: boolean) => void;
@@ -34,7 +34,6 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
   subject,
   deviceId,
   isAnswered,
-  hasWonOverall,
   savedAnswerData,
   onBack,
   onAnswerRecorded,
@@ -60,7 +59,7 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-  // Directly view explanation modal if already answered or completed
+  // Directly view explanation modal
   const [showExplanationOnly, setShowExplanationOnly] = useState(false);
 
   const openLightbox = (images: string[], index: number = 0) => {
@@ -71,7 +70,7 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userAnswer.trim() || isSubmitting || isAnswered || hasWonOverall) return;
+    if (!userAnswer.trim() || isSubmitting || isAnswered) return;
 
     setIsSubmitting(true);
     const isCorrect = checkAnswerMatch(userAnswer, question.acceptableAnswers);
@@ -97,7 +96,7 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
         onVoucherAwarded(awardedVoucher);
       }
 
-      // Record to device state
+      // Record to device state (locks this question from being answered repeatedly)
       onAnswerRecorded(question.id, userAnswer, isCorrect);
 
       // Record to Firestore submissions collection for admin records!
@@ -148,32 +147,6 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 p-5 space-y-5 max-w-lg mx-auto w-full pb-20">
-        {/* Overall Won Notification Banner */}
-        {hasWonOverall && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-zinc-950 to-amber-950/30 border border-amber-500/40 flex items-center justify-between gap-3 text-left">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                <Trophy className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-amber-300">您已通關獲獎！</p>
-                <p className="text-[11px] text-zinc-400">
-                  全站切換為觀摩學習模式，可自由查閱所有題目的詳解
-                </p>
-              </div>
-            </div>
-            {onViewWallet && (
-              <button
-                type="button"
-                onClick={onViewWallet}
-                className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-bold shrink-0"
-              >
-                看錢包
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Question Header Card */}
         <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950 p-5 space-y-4 text-left shadow-lg">
           <div className="flex items-center justify-between">
@@ -182,9 +155,24 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
             </span>
 
             {isAnswered && (
-              <span className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/50">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>已完成作答</span>
+              <span
+                className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                  savedAnswerData?.isCorrect
+                    ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/50'
+                    : 'bg-rose-950/80 text-rose-400 border-rose-800/50'
+                }`}
+              >
+                {savedAnswerData?.isCorrect ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>已通關獲獎</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>已作答鎖定</span>
+                  </>
+                )}
               </span>
             )}
           </div>
@@ -239,7 +227,8 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
         </div>
 
         {/* Answer Interactive Area */}
-        {!isAnswered && !hasWonOverall ? (
+        {!isAnswered ? (
+          /* Unanswered: Input form */
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2 text-left">
               <label
@@ -248,7 +237,7 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
               >
                 <span>請輸入您的答案：</span>
                 <span className="text-[11px] font-normal text-zinc-500">
-                  （支援多種表達方式，自動忽略大小寫與空格）
+                  （同一題送出後即鎖定不可重複作答）
                 </span>
               </label>
 
@@ -286,40 +275,55 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
             </button>
           </form>
         ) : (
-          /* Already answered or won overall: Show review explanation button */
-          <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/60 p-5 space-y-4 text-left">
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-zinc-300 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>
-                  {hasWonOverall && !isAnswered
-                    ? '已獲獎狀態（免再作答）'
-                    : '本機已作答此題目'}
+          /* Already answered: Locked - same question cannot be answered repeatedly! */
+          <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/80 p-5 space-y-4 text-left">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                {savedAnswerData?.isCorrect ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-rose-400" />
+                )}
+                <span className="text-xs font-bold text-white">
+                  {savedAnswerData?.isCorrect
+                    ? '恭喜！本題已答對通關'
+                    : '本題作答未通過'}
                 </span>
-              </p>
+                <span className="text-[10px] font-medium text-zinc-500 ml-auto flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-zinc-500" />
+                  <span>同一題不可重複作答</span>
+                </span>
+              </div>
+
               {savedAnswerData && (
-                <p className="text-xs text-zinc-400">
-                  先前提交答案：
-                  <span className="font-mono text-white font-bold ml-1">
-                    {savedAnswerData.answer || '（未記錄）'}
-                  </span>
-                  <span
-                    className={`ml-2 px-2 py-0.5 rounded text-[10px] font-bold ${
-                      savedAnswerData.isCorrect
-                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50'
-                        : 'bg-rose-950 text-rose-400 border border-rose-800/50'
-                    }`}
-                  >
-                    {savedAnswerData.isCorrect ? '答對' : '答錯'}
-                  </span>
-                </p>
+                <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/80 flex items-center justify-between text-xs">
+                  <span className="text-zinc-400">已提交答案：</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-white font-bold">
+                      {savedAnswerData.answer || '（未記錄）'}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        savedAnswerData.isCorrect
+                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50'
+                          : 'bg-rose-950 text-rose-400 border border-rose-800/50'
+                      }`}
+                    >
+                      {savedAnswerData.isCorrect ? '答對' : '答錯'}
+                    </span>
+                  </div>
+                </div>
               )}
+
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                本題已鎖定，每台裝置單一題目僅限作答一次。您可隨時查閱本題完整詳解，或前往其他題目進行挑戰！
+              </p>
             </div>
 
             <button
               type="button"
               onClick={() => setShowExplanationOnly(true)}
-              className="w-full py-3 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-emerald-400 hover:text-emerald-300 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+              className="w-full py-3 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-emerald-400 hover:text-emerald-300 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-md"
             >
               <Eye className="w-4 h-4" />
               <span>閱讀本題詳細解析與觀念</span>
@@ -327,11 +331,11 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
           </div>
         )}
 
-        {/* Security / System rule badge */}
+        {/* System rule note */}
         <div className="p-3 rounded-xl bg-zinc-950/40 border border-zinc-900 text-center">
           <p className="text-[11px] text-zinc-500 flex items-center justify-center gap-1.5">
             <HelpCircle className="w-3.5 h-3.5 text-zinc-600" />
-            <span>通關獲獎流水號由 Firebase 原子計數器遞增生成，每台裝置限領乙張</span>
+            <span>通關獲獎流水號由 Firebase 原子計數器遞增生成，具唯一跨裝置防偽性</span>
           </p>
         </div>
       </div>
@@ -351,7 +355,7 @@ export const QuizQuestionView: React.FC<QuizQuestionViewProps> = ({
         onRedeemVoucher={onRedeemVoucher}
       />
 
-      {/* Review Explanation Modal when clicking '閱讀本題詳細解析' */}
+      {/* Review Explanation Modal */}
       {showExplanationOnly && (
         <QuizResultModal
           isOpen={true}

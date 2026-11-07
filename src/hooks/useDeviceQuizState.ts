@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { DeviceQuizState, Voucher } from '../types';
 import { getOrCreateDeviceId } from '../lib/quizHelper';
 
-const STORAGE_KEY = 'quiz_device_state_v2';
+const STORAGE_KEY = 'quiz_device_state_v4';
 
 export function useDeviceQuizState() {
   const [state, setState] = useState<DeviceQuizState>(() => {
@@ -38,10 +38,11 @@ export function useDeviceQuizState() {
     }
   }, [state]);
 
-  // Record an answer attempt on this device
+  // Record an answer attempt on this device: strictly ONE attempt per question (同一題不可重複作答)
   const recordAnswer = useCallback((questionId: string, answer: string, isCorrect: boolean) => {
     setState((prev) => {
-      if (prev.answeredQuestionIds[questionId]) return prev; // already answered
+      // If already answered, locked - cannot re-answer the same question
+      if (prev.answeredQuestionIds[questionId]) return prev;
       return {
         ...prev,
         answeredQuestionIds: {
@@ -56,7 +57,7 @@ export function useDeviceQuizState() {
     });
   }, []);
 
-  // Award a voucher to this device
+  // Award a voucher to this device (earned when answering a question correctly)
   const awardVoucher = useCallback((voucher: Voucher) => {
     setState((prev) => ({
       ...prev,

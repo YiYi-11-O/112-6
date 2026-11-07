@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Lock,
   Ticket,
-  Trophy,
   Sparkles,
   ArrowRight,
   ShieldCheck,
@@ -23,7 +22,6 @@ function QuizAppContent() {
   const {
     deviceId,
     answeredQuestions,
-    hasWonVoucher,
     vouchers,
     recordAnswer,
     awardVoucher,
@@ -90,19 +88,19 @@ function QuizAppContent() {
               </button>
             </div>
 
-            {/* Winner Trophy Banner if device has already won */}
-            {hasWonVoucher && (
+            {/* Wallet Quick Status Banner if user has earned vouchers */}
+            {vouchers.length > 0 && (
               <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/60 via-zinc-950 to-amber-950/40 border border-amber-500/40 flex items-center justify-between gap-3 text-left shadow-lg">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                    <Trophy className="w-6 h-6" />
+                    <Ticket className="w-5 h-5" />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-amber-300">
-                      恭喜您已榮譽通關！
+                      已獲得 {vouchers.length} 張專屬防偽券
                     </h4>
                     <p className="text-[11px] text-zinc-400">
-                      專屬防偽兌換券已收入錢包，隨時可現場核銷
+                      可繼續挑戰其他科目題目，領取更多優惠！
                     </p>
                   </div>
                 </div>
@@ -120,7 +118,7 @@ function QuizAppContent() {
             <div className="space-y-3 text-center pt-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900/90 border border-zinc-800 text-emerald-400 text-xs font-medium">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>智慧多領域闖關挑戰</span>
+                <span>全領域智慧闖關挑戰</span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
@@ -162,8 +160,8 @@ function QuizAppContent() {
                 <div className="flex items-start gap-2.5">
                   <HelpCircle className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-zinc-200 font-semibold">多元答案智能比對：</span>
-                    支援中英文、數字等多種同義答案自動校驗。
+                    <span className="text-zinc-200 font-semibold">同一題不可重複作答：</span>
+                    每道題目每台裝置只能作答一次，送出後即鎖定為已作答（可查閱詳解）；各科目其他題目仍可繼續作答並領取兌換券。
                   </div>
                 </div>
               </div>
@@ -196,13 +194,13 @@ function QuizAppContent() {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
 
-              {hasWonVoucher && (
+              {vouchers.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setIsWalletOpen(true)}
                   className="w-full py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-bold transition-colors"
                 >
-                  查看已獲得的兌換券
+                  查看已獲得的兌換券 ({vouchers.length})
                 </button>
               )}
             </div>
@@ -231,7 +229,6 @@ function QuizAppContent() {
             subjects={subjects}
             questions={questions}
             answeredQuestions={answeredQuestions}
-            hasWonOverall={hasWonVoucher}
             onSelectQuestion={handleSelectQuestion}
             onBackToHome={() => setCurrentView('home')}
             onOpenWallet={() => setIsWalletOpen(true)}
@@ -245,7 +242,6 @@ function QuizAppContent() {
             subject={selectedSubject}
             deviceId={deviceId}
             isAnswered={isQuestionAnswered(selectedQuestion.id)}
-            hasWonOverall={hasWonVoucher}
             savedAnswerData={answeredQuestions[selectedQuestion.id]}
             onBack={() => setCurrentView('subjects')}
             onAnswerRecorded={recordAnswer}

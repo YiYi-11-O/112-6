@@ -10,7 +10,7 @@ export const DEFAULT_CONFIG: GlobalConfig = {
   voucherDiscountTitle: '恭喜獲得 6折 尊爵優惠券',
   voucherDiscountBadge: '6折 / 40% OFF',
   voucherSubtitle: '憑此券於合作門市結帳時出示，由店員點擊現場核銷',
-  voucherNotes: '限單次消費折抵使用，每台裝置限兌換一次，核銷即失效',
+  voucherNotes: '限單次消費折抵使用，憑券現場核銷，核銷後即失效作廢',
   voucherIcon: 'trophy',
   updatedAt: new Date().toISOString(),
 };

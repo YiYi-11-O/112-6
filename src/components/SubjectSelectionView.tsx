@@ -7,7 +7,7 @@ import {
   BookOpen,
   Sparkles,
   CheckCircle2,
-  Trophy,
+  XCircle,
   ImageIcon,
   Eye,
   HelpCircle,
@@ -19,7 +19,6 @@ interface SubjectSelectionViewProps {
   subjects: Subject[];
   questions: Question[];
   answeredQuestions: { [qId: string]: { answeredAt: string; answer: string; isCorrect: boolean } };
-  hasWonOverall: boolean;
   onSelectQuestion: (question: Question, subject: Subject) => void;
   onBackToHome: () => void;
   onOpenWallet?: () => void;
@@ -29,7 +28,6 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
   subjects,
   questions,
   answeredQuestions,
-  hasWonOverall,
   onSelectQuestion,
   onBackToHome,
   onOpenWallet,
@@ -104,34 +102,22 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 p-5 space-y-5 max-w-lg mx-auto w-full pb-20">
-        {/* Banner if already won */}
-        {hasWonOverall && (
-          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-zinc-950 to-amber-950/30 border border-amber-500/40 flex items-center gap-3 text-left">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
-              <Trophy className="w-4 h-4" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-bold text-amber-300">榮譽通關獎章生效中</p>
-              <p className="text-[11px] text-zinc-400">
-                本機已領取專屬防偽票券，其餘關卡皆開放自由閱覽題目與詳解
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* 1. Subjects Grid View */}
         {!selectedSubjectId ? (
           <div className="space-y-4">
             <div className="text-left space-y-1">
               <h2 className="text-base font-bold text-white">智慧科目專區</h2>
-              <p className="text-xs text-zinc-400">請選取您感興趣的知識領域進行挑戰</p>
+              <p className="text-xs text-zinc-400">請選取您感興趣的知識領域進行挑戰，每題皆可作答與抽獎</p>
             </div>
 
             <div className="grid grid-cols-1 gap-3">
               {subjects.map((sub) => {
                 const subQuestions = questions.filter((q) => q.subjectId === sub.id);
                 const answeredCount = subQuestions.filter((q) => answeredQuestions[q.id]).length;
-                const isAllDone = subQuestions.length > 0 && answeredCount === subQuestions.length;
+                const correctCount = subQuestions.filter(
+                  (q) => answeredQuestions[q.id]?.isCorrect
+                ).length;
+                const isAllDone = subQuestions.length > 0 && correctCount === subQuestions.length;
 
                 return (
                   <button
@@ -152,21 +138,21 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
                           {isAllDone && (
                             <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/50">
                               <CheckCircle2 className="w-3 h-3" />
-                              <span>全解</span>
+                              <span>全部通關</span>
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-zinc-400 line-clamp-1">{sub.description}</p>
                         <div className="flex items-center gap-2 pt-1 text-[11px] text-zinc-500">
                           <span>
-                            進度：{answeredCount} / {subQuestions.length} 題
+                            通關進度：{correctCount} / {subQuestions.length} 題
                           </span>
                           <div className="flex-1 max-w-[80px] h-1.5 rounded-full bg-zinc-900 overflow-hidden">
                             <div
                               className="h-full bg-emerald-500 transition-all duration-300"
                               style={{
                                 width: subQuestions.length
-                                  ? `${(answeredCount / subQuestions.length) * 100}%`
+                                  ? `${(correctCount / subQuestions.length) * 100}%`
                                   : '0%',
                               }}
                             />
@@ -200,7 +186,9 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
             ) : (
               <div className="space-y-3">
                 {subjectQuestions.map((q) => {
-                  const isAnswered = Boolean(answeredQuestions[q.id]);
+                  const answerData = answeredQuestions[q.id];
+                  const isAnswered = Boolean(answerData);
+                  const isCorrect = answerData?.isCorrect;
                   const hasImages = q.imageUrls && q.imageUrls.length > 0;
 
                   return (
@@ -218,14 +206,17 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
 
                         {/* Status Badges */}
                         {isAnswered ? (
-                          <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/50">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>已作答</span>
-                          </span>
-                        ) : hasWonOverall ? (
-                          <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-950/60 text-amber-400 border border-amber-800/50">
-                            觀摩學習
-                          </span>
+                          isCorrect ? (
+                            <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/50">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>已通關</span>
+                            </span>
+                          ) : (
+                            <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-800/50">
+                              <XCircle className="w-3 h-3" />
+                              <span>已作答 (未通過)</span>
+                            </span>
+                          )
                         ) : (
                           <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-900 text-zinc-400 border border-zinc-800">
                             未作答
@@ -269,7 +260,7 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
                           type="button"
                           onClick={() => onSelectQuestion(q, selectedSubject!)}
                           className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                            isAnswered || hasWonOverall
+                            isAnswered
                               ? 'bg-zinc-900 hover:bg-zinc-800 text-emerald-400 border border-zinc-800'
                               : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950'
                           }`}
@@ -278,11 +269,6 @@ export const SubjectSelectionView: React.FC<SubjectSelectionViewProps> = ({
                             <>
                               <Eye className="w-3.5 h-3.5" />
                               <span>看詳解</span>
-                            </>
-                          ) : hasWonOverall ? (
-                            <>
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>檢視題目與詳解</span>
                             </>
                           ) : (
                             <>
