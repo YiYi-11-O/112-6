@@ -1,0 +1,108 @@
+{
+  "entities": {
+    "Subject": {
+      "title": "Subject",
+      "description": "Quiz subject category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 500 },
+        "iconName": { "type": "string", "maxLength": 50 },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "order"]
+    },
+    "Question": {
+      "title": "Question",
+      "description": "Question with multiple images, acceptable answers and detailed explanation with images",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 200 },
+        "prompt": { "type": "string", "maxLength": 2000 },
+        "imageUrls": { "type": "array" },
+        "explanation": { "type": "string", "maxLength": 2000 },
+        "explanationImageUrls": { "type": "array" },
+        "acceptableAnswers": { "type": "array" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "subjectId", "title", "prompt", "acceptableAnswers"]
+    },
+    "GlobalConfig": {
+      "title": "GlobalConfig",
+      "description": "App settings, voucher styling and admin password",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 100 },
+        "subtitle": { "type": "string", "maxLength": 200 },
+        "startButtonText": { "type": "string", "maxLength": 50 },
+        "footerText": { "type": "string", "maxLength": 200 },
+        "adminPasswordHash": { "type": "string" },
+        "voucherTheme": { "type": "string" },
+        "voucherDiscountTitle": { "type": "string" },
+        "voucherDiscountBadge": { "type": "string" },
+        "voucherSubtitle": { "type": "string" },
+        "voucherNotes": { "type": "string" },
+        "voucherIcon": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "VoucherCounter": {
+      "title": "VoucherCounter",
+      "description": "Atomic voucher counter across devices",
+      "type": "object",
+      "properties": {
+        "currentCount": { "type": "number" },
+        "prefix": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["currentCount"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Answer record submitted by any user or device",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "deviceId": { "type": "string", "maxLength": 128 },
+        "deviceLabel": { "type": "string", "maxLength": 128 },
+        "questionId": { "type": "string" },
+        "questionTitle": { "type": "string", "maxLength": 200 },
+        "subjectId": { "type": "string" },
+        "subjectName": { "type": "string", "maxLength": 100 },
+        "userAnswer": { "type": "string", "maxLength": 500 },
+        "isCorrect": { "type": "boolean" },
+        "correctAnswers": { "type": "array" },
+        "awardedVoucherNo": { "type": "string" },
+        "submittedAt": { "type": "string" }
+      },
+      "required": ["id", "deviceId", "questionId", "userAnswer", "isCorrect", "submittedAt"]
+    }
+  },
+  "firestore": {
+    "/subjects/{subjectId}": {
+      "schema": { "$ref": "#/entities/Subject" },
+      "description": "Subject categories collection"
+    },
+    "/questions/{questionId}": {
+      "schema": { "$ref": "#/entities/Question" },
+      "description": "Quiz questions collection"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/GlobalConfig" },
+      "description": "Site configurations"
+    },
+    "/counters/{counterId}": {
+      "schema": { "$ref": "#/entities/VoucherCounter" },
+      "description": "Atomic sequence counter"
+    },
+    "/submissions/{submissionId}": {
+      "schema": { "$ref": "#/entities/Submission" },
+      "description": "Answer submission records from all users"
+    }
+  }
+}
